@@ -49,13 +49,13 @@ public class InputController : MonoBehaviour {
                 {
                     Debug.Log(hitInfo.transform.gameObject.name);
 
-                    HandCard handCard = hitInfo.transform.gameObject.GetComponent<HandCard>();
-                    if( handCard != null)
+                    Card card = hitInfo.transform.gameObject.GetComponent<Card>();
+                    if( card != null)
                     {
                         // handCard on Touch;
                         //hitInfo.transform.gameObject.transform.Translate(0, 3, 0);
 
-                        m_cardDetail.ActiveHandCard(m_cardPlayer, handCard);
+                        m_cardDetail.ActiveHandCard(m_cardPlayer, card);
                     }
                 }
             }

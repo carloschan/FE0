@@ -26,6 +26,9 @@ public class CardDetail : MonoBehaviour {
     public delegate void ResponeAction(Response response);
     public static event ResponeAction OnRespone;
 
+    private CardPlayer m_cardPlayer;
+    private Card m_card;
+
     // Use this for initialization
     void Start () {
 	
@@ -68,7 +71,7 @@ public class CardDetail : MonoBehaviour {
         m_illustration.sprite = Resources.Load<Sprite>("Card illustration/" + cardData.illustrationPath);
     }
 
-    public void ActiveHandCard(CardPlayer cardPlayer, HandCard handCard)
+    public void ActiveHandCard(CardPlayer cardPlayer, Card card)
     {
         if (m_instance.activeInHierarchy)
         {
@@ -78,8 +81,9 @@ public class CardDetail : MonoBehaviour {
         m_instance.SetActive(true);
         m_infomation.SetActive(false);
 
-        setCardDetail(handCard.cardData);
-
+        setCardDetail(card.cardData);
+        m_cardPlayer = cardPlayer;
+        m_card = card;
 
 
     }
