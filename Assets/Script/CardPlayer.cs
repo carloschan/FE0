@@ -19,6 +19,9 @@ public class CardPlayer : MonoBehaviour {
 
     [SerializeField] private String m_playerName;
 
+    [SerializeField]
+    private bool m_ControlPlayer;
+
     private Queue<CardData> m_deck = new Queue<CardData>();
 
     private List<Card> m_frontCount = new List<Card>();
@@ -44,7 +47,8 @@ public class CardPlayer : MonoBehaviour {
     public Queue<Card> energy { get { return m_energy; } }
     public Queue<Card> life { get { return m_life; } }
 
-
+    public bool isEngry { get; set; }
+    public bool isCharater { get; set; }
 
     public delegate void DrawCardAction(int remainText);
     public event DrawCardAction OnCardDraw;
@@ -52,6 +56,10 @@ public class CardPlayer : MonoBehaviour {
     public delegate void PlayerAction();
     public event PlayerAction OnDrawEnd;
     public event PlayerAction OnFriendShipChooseEnd;
+
+
+    public int mAvailableEngry;
+    public int mAvailableCost;
 
 
     private void Disable()
@@ -91,8 +99,12 @@ public class CardPlayer : MonoBehaviour {
 
         GameMaster.OnPhaseStart += pharseStart;
         GameMaster.OnPhaseEnd += pharseEnd;
+        isEngry = true;
+        isCharater = true;
 
-
+        mAvailableEngry = 0;
+        mAvailableCost = 0;
+        Information.instance.UpdateRemainEngry(mAvailableEngry, mAvailableCost);
     }
 
     private void FixedUpdate()
@@ -127,18 +139,14 @@ public class CardPlayer : MonoBehaviour {
         newCard.cardType = Card.CardType.HAND;
         newCard.cardData = cardData;
 
+        if (!m_ControlPlayer)
+            newCard.filp();
+
         m_handCard.Add(newCard);
 
         GameMaster gm = GameObject.FindGameObjectWithTag("GameMaster").GetComponent<GameMaster>();
 
-        for (int i = 0; i < m_handCard.Count; ++i)
-        {
-            GameObject handCardObject = m_handCard[i].assetObject;
-
-            Vector3 position = new Vector3(i * 10.0F / (m_handCard.Count * 1.8f), 0, -i) + m_handCardArea.transform.position;
-
-            handCardObject.transform.position = position;
-        }
+        _refreshHandCardPosition();
 
         if (gm.currentPhase > GameMaster.Phase.PREPARE)
         {
@@ -146,9 +154,11 @@ public class CardPlayer : MonoBehaviour {
             boxCollider.enabled = false;
         }
 
+        // whenCardDraw Event;
         if (OnCardDraw != null)
             OnCardDraw(m_deck.Count);
 
+        // drawEnd Event;
         if (OnDrawEnd != null)
             OnDrawEnd();
 
@@ -195,9 +205,137 @@ public class CardPlayer : MonoBehaviour {
 
         GameMaster gm = GameObject.FindGameObjectWithTag("GameMaster").GetComponent<GameMaster>();
 
-       
+
+    }
+
+    public void putHandCardToEngry( Card handCard )
+    {
+        for( int i = 0; i < m_handCard.Count; ++i)
+        {
+            if( m_handCard[i] == handCard)
+            {
+                putCardToEnegry(handCard.cardData);
+                m_handCard.Remove(handCard);
+                Destroy(handCard.assetObject);
+                _refreshHandCardPosition();
 
 
+                ++mAvailableEngry;
+                ++mAvailableCost;
+                Information.instance.UpdateRemainEngry(mAvailableEngry, mAvailableCost);
+                return;
+            }
+        }
+    }
+
+    public bool putHandCardToBattleField(Card handCard, bool isFront)
+    {
+        for (int i = 0; i < m_handCard.Count; ++i)
+        {
+            if (m_handCard[i] == handCard)
+            {
+                if (handCard.cardData.attendCost <= mAvailableEngry)
+                {
+                    if(isFront)
+                        putCardToFrontBattleField(handCard);
+                    else
+                        putCardToBackBattleField(handCard);
+
+                    m_handCard.Remove(handCard);
+                    Destroy(handCard.assetObject);
+                    _refreshHandCardPosition();
+
+                    mAvailableEngry -= handCard.cardData.attendCost;
+                    Information.instance.UpdateRemainEngry(mAvailableEngry, mAvailableCost);
+
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    public void putCardToFrontBattleField(Card card)
+    {
+        CardData cardData = card.cardData;
+
+        GameObject newCardObject = Instantiate(m_cardAsset) as GameObject;
+
+        // Vector3 position = new Vector3(m_life.Count * 10.0F / m_life.Count + 1, 0, -m_life.Count) + m_lifeArea.transform.position;
+        newCardObject.transform.SetParent(m_frontCountArea.transform, false);
+        Vector3 position = new Vector3(-m_frontCount.Count / 5.0f, 0, 0) + m_frontCountArea.transform.position;
+        newCardObject.transform.position = position;
+        // newCardObject.transform.SetParent(m_lifeArea.transform);
+
+        newCardObject.layer = 0;
+
+        Card newCard = newCardObject.GetComponent<Card>();
+
+
+
+        newCard.cardType = Card.CardType.CHARATER;
+        newCard.cardData = cardData;
+
+        m_frontCount.Add(newCard);
+
+    }
+
+    public void putCardToBackBattleField(Card card)
+    {
+        CardData cardData = card.cardData;
+
+        GameObject newCardObject = Instantiate(m_cardAsset) as GameObject;
+
+        // Vector3 position = new Vector3(m_life.Count * 10.0F / m_life.Count + 1, 0, -m_life.Count) + m_lifeArea.transform.position;
+        newCardObject.transform.SetParent(m_backCountArea.transform, false);
+        Vector3 position = new Vector3(-m_backCount.Count / 5.0f, 0, 0) + m_backCountArea.transform.position;
+        newCardObject.transform.position = position;
+        // newCardObject.transform.SetParent(m_lifeArea.transform);
+
+        newCardObject.layer = 0;
+
+        Card newCard = newCardObject.GetComponent<Card>();
+
+
+
+        newCard.cardType = Card.CardType.CHARATER;
+        newCard.cardData = cardData;
+
+        m_backCount.Add(newCard);
+
+    }
+
+    public void putCardToEnegry(CardData cardData)
+    {
+
+
+        GameObject newCardObject = Instantiate(m_cardAsset) as GameObject;
+
+        // Vector3 position = new Vector3(m_life.Count * 10.0F / m_life.Count + 1, 0, -m_life.Count) + m_lifeArea.transform.position;
+        newCardObject.transform.SetParent(m_energyArea.transform, false);
+        Vector3 position = new Vector3(-m_energy.Count / 3.0f, 0, 0 )+ m_energyArea.transform.position;
+        newCardObject.transform.position = position;
+        // newCardObject.transform.SetParent(m_lifeArea.transform);
+
+        newCardObject.layer = 0;
+
+        Card newCard = newCardObject.GetComponent<Card>();
+
+
+
+        newCard.cardType = Card.CardType.ENEGY;
+        newCard.cardData = cardData;
+
+        m_energy.Enqueue(newCard);
+
+
+        newCard.GetComponent<EnegyType>().useAttend = true;
+        newCard.GetComponent<EnegyType>().useCost = true;
+
+        GameMaster gm = GameObject.FindGameObjectWithTag("GameMaster").GetComponent<GameMaster>();
 
     }
 
@@ -211,9 +349,9 @@ public class CardPlayer : MonoBehaviour {
             case GameMaster.Phase.START:
                 StartCoroutine(costRecover());
                 break;
-            case GameMaster.Phase.FRIENDSHIP:
-                Information.instance.UpdateState(m_playerName + " 絆階段開始");
-
+            case GameMaster.Phase.ATTEND:
+                Information.instance.UpdateState(m_playerName + " 出角色階段");
+                Information.instance.nextPhaseBtnOn();
                 // open hand card collision for player;
                 for (int i = 0; i < m_handCard.Count; ++i)
                 {
@@ -221,6 +359,19 @@ public class CardPlayer : MonoBehaviour {
                     boxCollider.enabled = true;
                 }
 
+                break;
+            case GameMaster.Phase.ACTION:
+                Information.instance.UpdateState(m_playerName + " 行動階段");
+                if (GameMaster.instance.round == 0)
+                {
+                    GameMaster.instance.nextPhase();
+                }
+
+
+                break;
+            case GameMaster.Phase.END:
+                Information.instance.UpdateState(m_playerName + " END階段");
+                GameMaster.instance.nextPhase();
                 break;
 
         }
@@ -259,7 +410,14 @@ public class CardPlayer : MonoBehaviour {
     {
         if (GameMaster.instance.round > 0)
         {
+            isCharater = true;
+            isEngry = true;
             Information.instance.UpdateState(m_playerName + " 回 cost 中");
+
+            mAvailableEngry = m_energy.Count;
+
+            Information.instance.UpdateRemainEngry(mAvailableEngry, mAvailableCost);
+
             yield return new WaitForSeconds(3);
 
         }
@@ -279,5 +437,18 @@ public class CardPlayer : MonoBehaviour {
         }
     }
 
-        
+    private void _refreshHandCardPosition()
+    {
+        for (int i = 0; i < m_handCard.Count; ++i)
+        {
+            GameObject handCardObject = m_handCard[i].assetObject;
+
+            Vector3 position = new Vector3(i * 10.0F / (m_handCard.Count * 1.8f), 0, -i * 0.01f) + m_handCardArea.transform.position;
+
+            handCardObject.transform.position = position;
+        }
+
+    }
+
+
 }

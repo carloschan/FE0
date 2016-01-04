@@ -15,12 +15,21 @@ public class CardDetail : MonoBehaviour {
     private GameObject m_infomation;
 
 
+    [SerializeField]
+    private GameObject[] m_ButtonState;
+
+
+    [SerializeField]
+    private Text m_status_text;
+
     public enum DetailType { HAND_CARD, CHOOSET_TARGET, CHARATER, VIEW}
     public enum Response { FRIENDSHIP, ATTEND,  CLASS_CHANGE, CRITICAL, DEF, ACTIVE_SKILL, ABANDOM }
 
     public enum TextType { ATTACK_COST, CLASS_CHANGE_COST, CLASS, WARRIOR, ATTACK, SUPPORT, SYMBOL, SEX, ARMS, TYPE, RANGE }
 
+    public enum InformationState {  HAND_CARD, PERAPARE_IN_BATTLE_FIELD, CHOOSE_TARGET, CHARTER, VIEW_ONLY}
     private DetailType m_detailType;
+
 
 
     public delegate void ResponeAction(Response response);
@@ -28,6 +37,9 @@ public class CardDetail : MonoBehaviour {
 
     private CardPlayer m_cardPlayer;
     private Card m_card;
+
+
+    public Card card { get { return m_card; } }
 
     // Use this for initialization
     void Start () {
@@ -71,7 +83,7 @@ public class CardDetail : MonoBehaviour {
         m_illustration.sprite = Resources.Load<Sprite>("Card illustration/" + cardData.illustrationPath);
     }
 
-    public void ActiveHandCard(CardPlayer cardPlayer, Card card)
+    public void activeHandCard(CardPlayer cardPlayer, Card card)
     {
         if (m_instance.activeInHierarchy)
         {
@@ -82,16 +94,30 @@ public class CardDetail : MonoBehaviour {
         m_infomation.SetActive(false);
 
         setCardDetail(card.cardData);
+        setBtnState(InformationState.HAND_CARD);
         m_cardPlayer = cardPlayer;
         m_card = card;
 
 
     }
 
-    public void Inactive()
+    public void inactive()
     {
         m_instance.SetActive(false);
         m_infomation.SetActive(true);
+    }
+
+    public void setStatusText(String msg)
+    {
+        m_status_text.text = msg;   
+    }
+
+    public void setBtnState(InformationState informationState)
+    {
+        for( int i = 0; i < m_ButtonState.Length; ++i)
+        {
+            m_ButtonState[i].SetActive(i == (int)informationState);
+        }
     }
 
   }

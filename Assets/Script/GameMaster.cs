@@ -9,7 +9,7 @@ public class GameMaster : MonoBehaviour {
     [SerializeField] private CardPlayer m_player2 = null;
 
 
-    public enum Phase { PREPARE, START, FRIENDSHIP, ATTEND, ACTION, END};
+    public enum Phase { PREPARE, START,  ATTEND, ACTION, END};
 
     private int currentPlayerIdx = 0;
 
